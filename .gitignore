@@ -1,0 +1,7 @@
+
+#R specific ingore files
+eco_genomics.Rproj
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
