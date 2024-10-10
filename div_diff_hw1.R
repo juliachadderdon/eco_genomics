@@ -25,7 +25,7 @@ dim(meta2.5)
 
 #calculate diversity stats using the genetic_diff fxn in vcfR
 
-vcf.5.dif <- genetic_diff(vcf,
+vcf.5.dif <- genetic_diff(vcf.5,
                         pops = as.factor(meta2.5$region),
                         method = "nei")
 # pop = factor we're interested in

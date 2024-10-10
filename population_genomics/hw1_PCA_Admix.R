@@ -7,6 +7,9 @@ options(bitmapType="cairo")
 
 setwd("~/projects/eco_genomics/population_genomics/")
 
+### .5
+
+
 vcf.5 <- read.vcfR("~/projects/eco_genomics/population_genomics/outputs/vcf_final.filtered.0.5.vcf.gz")
 
 # need to thin SNPs for LD b4 we run PCA and Admixture 
@@ -21,7 +24,7 @@ meta2.5 <- meta[meta$id %in% colnames(vcf.5@gt[, -1]) , ]
 dim(meta2.5)
 
 write.vcf(vcf.thin.5, "~/projects/eco_genomics/population_genomics/outputs/vcf_final.filtered.thinned.5.vcf.gz")
-
+dim(vcf.thin.5)
 # hide uncompressed vcf file, bc too big for github, outside of repo
 
 system("gunzip -c ~/projects/eco_genomics/population_genomics/outputs/vcf_final.filtered.thinned.5.vcf.gz > ~/vcf_final.filtered.thinned.5.vcf")
@@ -29,22 +32,25 @@ system("gunzip -c ~/projects/eco_genomics/population_genomics/outputs/vcf_final.
 geno <- vcf2geno(input.file="/gpfs1/home/j/c/jchadder/vcf_final.filtered.thinned.5.vcf",
                  output.file = "outputs/vcf_final.filtered.thinned.5.vcf.geno")
 
-CentPCA <- LEA::pca("outputs/vcf_final.filtered.thinned.5.vcf.geno", scale=TRUE)
+mygeno <- read.geno("outputs/vcf_final.filtered.thinned.5.vcf.geno")
 
+CentPCA.5 <- LEA::pca(mygeno, scale=TRUE)
 
-CentPCA <- load.pcaProject("vcf_final.filtered.thinned.5.vcf.pcaProject")
+CentPCA.5 <- LEA::pca("outputs/vcf_final.filtered.thinned.5.vcf.geno", scale=TRUE)
+
+CentPCA.5 <- load.pcaProject("vcf_final.filtered.thinned.5.vcf.pcaProject")
 #load in previous pca
 
-show(CentPCA)
+show(CentPCA.5)
 
-plot(CentPCA)
+plot(CentPCA.5)
 
-plot(CentPCA$projections,
+plot(CentPCA.5$projections,
      col=as.factor(meta2.5$region))
 legend("bottomright", legend=as.factor(unique(meta2.5$region)), 
                                        fill=as.factor(unique(meta2.5$region)))
 
-ggplot(as.data.frame(CentPCA$projections),
+ggplot(as.data.frame(CentPCA.5$projections),
        aes(x=V1, y=V2, color=meta2.5$region, shape=meta2.5$continent))+
   geom_point(alpha=1)+
   labs(title="Centaurea genetic PCA", x="PC1", y="PC2", color="Region", shape="Continent")
@@ -52,55 +58,53 @@ ggplot(as.data.frame(CentPCA$projections),
 # could set xlim and ylim to zoom in  on specific stuff
 # if want to see PC2 & PC3, etc just change x= and y=
 
-ggsave("figures/CentPCA_PC1vPC2.pdf", width=6, height=6, units="in")
+ggsave("figures/CentPCA.5_PC1vPC2.pdf", width=6, height=6, units="in")
 # ggsave saves last plot
 
 
-# running admix analysis and create plots
-# use LEA R package with function "snmf"
 
-CentAdmix <- snmf("outputs/vcf_final.filtered.thinned.5.vcf.geno",
-                  K=1:10,
-                  entropy = T,
-                  repetitions = 3,
-                  project = "new")  
-#if adding to analysis later, could choose project= "continue"
+### .9 
 
-plot(CentAdmix)
-#can play around with K to fit data
-# cross-entropy indicates how well data fits K value (lower values better)
+vcf.9 <- read.vcfR("~/projects/eco_genomics/population_genomics/outputs/vcf_final.filtered.0.9.vcf.gz")
 
-par(mfrow=c(2,1))
-plot(CentAdmix, col="blue4", main="SNMF")
-plot(CentPCA$eigenvalues[1:10], 
-     ylab="Eigenvalues", xlab="Number of PCs",
-     col="blue4", main="PCA")
-# PCA and SNMF match up, yay!
+# need to thin SNPs for LD b4 we run PCA and Admixture 
+# to satisfy assumptions of independence among loci
 
-dev.off()
-#resets plotting
+vcf.thin.9 <- distance_thin(vcf.9, min.distance = 500)
+vcf.thin.9 <- min_mac(vcf.9, min.mac=1)
 
-myK=5
-# so you don't change whole script's K while we play around
-CE = cross.entropy(CentAdmix, K=myK)
-best = which.min(CE)
-# see which CE is best
+meta <- read.csv("/gpfs1/cl/pbio3990/PopulationGenomics/metadata/meta4vcf.csv")
+dim(meta)
 
-myKQ = Q(CentAdmix, K=myK, run=best)
+meta2.9 <- meta[meta$id %in% colnames(vcf.9@gt[, -1]) , ]
+dim(meta2.9)
 
-myKQmeta = cbind(myKQ, meta2)
+write.vcf(vcf.thin.9, "~/projects/eco_genomics/population_genomics/outputs/vcf_final.filtered.thinned.9.vcf.gz")
+dim(vcf.thin.9)
+# hide uncompressed vcf file, bc too big for github, outside of repo
 
-my.colors = c("blue4", "pink2", "lightblue", "olivedrab", "orange2")
 
-myKQmeta = as_tibble(myKQmeta) %>%
-  group_by(continent) %>%
-  arrange(region, pop, .by_group = TRUE)
+system("gunzip -c ~/projects/eco_genomics/population_genomics/outputs/vcf_final.filtered.thinned.9.vcf.gz > ~/vcf_final.filtered.thinned.9.vcf")
 
-barplot(as.matrix(t(myKQmeta[ , 1:myK])),
-        border = NA,
-        space = 0,
-        col = my.colors[1:myK],
-        xlab = "Geographic Regions", ylab = "Ancestry Proportions",
-        main = paste0("Ancestry matrix K=",myK))
+geno <- vcf2geno(input.file="/gpfs1/home/j/c/jchadder/vcf_final.filtered.thinned.9.vcf",
+                 output.file = "~/projects/eco_genomics/population_genomics/outputs/vcf_final.filtered.thinned.9.vcf.geno")
 
+CentPCA.9 <- LEA::pca("~/projects/eco_genomics/population_genomics/outputs/vcf_final.filtered.thinned.9.vcf.geno", scale=TRUE)
+
+#CentPCA.9 <- load.pcaProject("vcf_final.filtered.thinned.9.vcf.pcaProject")
+#load in previous pca
+
+show(CentPCA.9)
+
+plot(CentPCA.9)
+
+plot(CentPCA.9$projections,
+     col=as.factor(meta2.9$region))
+legend("bottomright", legend=as.factor(unique(meta2.9$region)), 
+       fill=as.factor(unique(meta2.9$region)))
+
+ggplot(as.data.frame(CentPCA.9$projections),
+       aes(x=V1, y=V2, color=meta2.9$region, shape=meta2.9$continent))+
+  geom_point(alpha=1)+
+  labs(title="Centaurea genetic PCA", x="PC1", y="PC2", color="Region", shape="Continent")
 
