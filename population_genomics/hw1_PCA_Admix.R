@@ -71,7 +71,8 @@ vcf.9 <- read.vcfR("~/projects/eco_genomics/population_genomics/outputs/vcf_fina
 # to satisfy assumptions of independence among loci
 
 vcf.thin.9 <- distance_thin(vcf.9, min.distance = 500)
-vcf.thin.9 <- min_mac(vcf.9, min.mac=1)
+vcf.thin.9 <- filter_biallelic(vcf.thin.9)
+vcf.thin.90<- min_mac(vcf.9, min.mac=1)
 
 meta <- read.csv("/gpfs1/cl/pbio3990/PopulationGenomics/metadata/meta4vcf.csv")
 dim(meta)
